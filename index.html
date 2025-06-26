@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess That Sound Game</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f0f2f5; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background-color: #ffffff; /* White card background */
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            padding: 2.5rem;
+            text-align: center;
+            border: 1px solid #e2e8f0; /* Light border */
+        }
+        .button {
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        .button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        /* Custom modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 1rem;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="selection:bg-blue-200">
+    <div class="container">
+        <h1 class="text-4xl font-extrabold text-gray-800 mb-6 tracking-tight">Guess That Sound!</h1>
+        <p class="text-lg text-gray-600 mb-8 leading-relaxed">
+            Welcome to the remote "Guess That Sound" game! Use the buttons below to play the mystery sound and buzz in.
+            Organize your team on a video call, share your screen, and let the fun begin!
+        </p>
+
+        <div class="flex flex-col sm:flex-row justify-center gap-6 mb-10">
+            <button id="playMysterySoundBtn" class="button bg-gradient-to-r from-purple-600 to-indigo-700 text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg hover:from-purple-700 hover:to-indigo-800 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-75">
+                Play Mystery Sound
+            </button>
+            <button id="buzzerBtn" class="button bg-gradient-to-r from-red-500 to-rose-600 text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg hover:from-red-600 hover:to-rose-700 focus:outline-none focus:ring-4 focus:ring-red-300 focus:ring-opacity-75">
+                Buzzer!
+            </button>
+        </div>
+
+        <div class="text-left bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-inner">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">How to Play (Remote Team):</h2>
+            <ol class="list-decimal list-inside text-gray-600 space-y-2">
+                <li><strong class="text-gray-800">Host's Role:</strong> One person (the host) shares their screen on a video conferencing tool (Zoom, Google Meet, etc.).</li>
+                <li><strong class="text-gray-800">Prepare Sounds:</strong> The host prepares their own mystery sound files (e.g., animal noises, household items, vehicle sounds). You'll need to play these sounds through your computer's audio, *separate* from this application's "Play Mystery Sound" button, or by integrating them if you host them online. This app's 'Play Mystery Sound' currently plays a generated tone as a placeholder.</li>
+                <li><strong class="text-gray-800">Play the Sound:</strong> The host plays one of their chosen mystery sounds through their computer speakers (which will be picked up by the screen-sharing audio).</li>
+                <li><strong class="text-gray-800">Buzz In:</strong> When a team member thinks they know the answer, they verbally shout "Buzz!" or similar. The host then clicks the "Buzzer!" button in this app to acknowledge their buzz-in.</li>
+                <li><strong class="text-gray-800">Guessing:</strong> The first person to "buzz in" gets to guess the sound.</li>
+                <li><strong class="text-gray-800">Scoring:</strong> Keep track of scores!</li>
+            </ol>
+            <p class="mt-4 text-sm text-gray-500">
+                Tip: For the best experience, ensure your screen-sharing settings include "share computer audio."
+            </p>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Messages -->
+    <div id="customModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeModalBtn">&times;</span>
+            <p id="modalMessage" class="text-lg text-gray-700 font-semibold"></p>
+            <button id="modalOkBtn" class="mt-5 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg button">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Ensure Tone.js is initialized on a user gesture
+        document.documentElement.addEventListener('mousedown', () => {
+            if (Tone.context.state !== 'running') {
+                Tone.start();
+            }
+        });
+
+        // Get buttons and modal elements
+        const playMysterySoundBtn = document.getElementById('playMysterySoundBtn');
+        const buzzerBtn = document.getElementById('buzzerBtn');
+        const customModal = document.getElementById('customModal');
+        const modalMessage = document.getElementById('modalMessage');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const modalOkBtn = document.getElementById('modalOkBtn');
+
+        // --- Tone.js Sound Generators ---
+
+        // Buzzer Sound
+        const buzzerSynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: {
+                type: 'square' // A square wave for a sharp, buzzy sound
+            },
+            envelope: {
+                attack: 0.005,
+                decay: 0.1,
+                sustain: 0.05,
+                release: 0.2
+            }
+        }).toDestination();
+
+        // Mystery Sound (a simple noise burst for demonstration)
+        const mysteryNoise = new Tone.NoiseSynth({
+            noise: {
+                type: 'white' // White noise for a generic sound effect
+            },
+            envelope: {
+                attack: 0.01,
+                decay: 0.3,
+                sustain: 0,
+                release: 0.1
+            }
+        }).toDestination();
+
+        // --- Event Listeners ---
+
+        playMysterySoundBtn.addEventListener('click', () => {
+            try {
+                // Play a brief noise burst for the mystery sound
+                mysteryNoise.triggerAttackRelease("8n"); // "8n" means an eighth note duration
+                showMessage("Playing a generic mystery sound!", "Tip: For real sounds, play them separately or integrate via URL.");
+            } catch (error) {
+                console.error("Error playing mystery sound:", error);
+                showMessage("Error playing mystery sound. Check console for details.");
+            }
+        });
+
+        buzzerBtn.addEventListener('click', () => {
+            try {
+                // Play a specific note for the buzzer
+                buzzerSynth.triggerAttackRelease('C4', '0.1'); // C4 note for 0.1 seconds
+                showMessage("Buzzzzzzz!", "Someone buzzed in!");
+            } catch (error) {
+                console.error("Error playing buzzer sound:", error);
+                showMessage("Error playing buzzer sound. Check console for details.");
+            }
+        });
+
+        // --- Custom Modal Functions ---
+        function showMessage(title, message) {
+            modalMessage.innerHTML = `<strong>${title}</strong><br>${message}`;
+            customModal.style.display = 'flex'; // Use flexbox to center
+        }
+
+        // Close modal when close button or OK button is clicked
+        closeModalBtn.addEventListener('click', () => {
+            customModal.style.display = 'none';
+        });
+
+        modalOkBtn.addEventListener('click', () => {
+            customModal.style.display = 'none';
+        });
+
+        // Close modal when clicking outside of it
+        window.addEventListener('click', (event) => {
+            if (event.target == customModal) {
+                customModal.style.display = 'none';
+            }
+        });
+
+        // Initialize Firebase (if storage was needed, this would be set up here)
+        // For this simple app, no Firebase storage is required as no data is persisted.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+
+        // Note: For a game that needs to store data (e.g., scores, custom sound lists),
+        // you would initialize Firebase here and use Firestore.
+        // Since this is a simple local utility, it's not strictly necessary.
+
+        // Firebase authentication setup (minimal, for context, but not actively used for app features here)
+        // This part is included to fulfill the requirement of showing how __initial_auth_token would be used,
+        // even if not strictly needed for this particular app's functionality.
+        if (firebaseConfig) {
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+            import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+
+            const initialAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                        console.log("Signed in with custom token.");
+                    } else {
+                        await signInAnonymously(auth);
+                        console.log("Signed in anonymously.");
+                    }
+                    const userId = auth.currentUser?.uid || crypto.randomUUID();
+                    console.log("User ID:", userId);
+                    // If this app were multi-user, you'd display userId on UI here.
+                } catch (error) {
+                    console.error("Firebase Auth Error:", error);
+                }
+            };
+            initialAuth();
+        } else {
+             console.warn("Firebase config not available. Running without Firebase services.");
+        }
+
+    </script>
+</body>
+</html>
